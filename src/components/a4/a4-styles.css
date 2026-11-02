@@ -1,0 +1,281 @@
+/* ============================================================
+   A4 打印文档通用样式
+   - 屏幕预览、打印克隆、PDF 导出共用
+   - 必须是非 scoped 的全局样式
+   ============================================================ */
+
+/* ---------------- 基础重置 ---------------- */
+.a4-print-wrapper,
+.a4-print-wrapper * {
+  box-sizing: border-box;
+}
+
+/* ============================================================
+   纸张尺寸变量
+   纵向：210mm × 297mm，内边距 18/16mm
+   横向：297mm × 210mm，内边距 16/12mm
+   ============================================================ */
+.a4-print-wrapper {
+  --a4-ink: #1f2329;
+  --a4-ink-2: #646a73;
+  --a4-line: #dee0e3;
+  --a4-brand: #2b5cff;
+
+  --a4-page-w: 210mm;
+  --a4-page-h: 297mm;
+  --a4-page-pad-x: 18mm;
+  --a4-page-pad-y: 16mm;
+
+  --a4-header-mb: 18px;
+  --a4-footer-mt: 18px;
+
+  color: var(--a4-ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+
+  /* 横向时纸张比容器宽，允许横向滚动 */
+  overflow-x: auto;
+}
+
+.a4-print-wrapper.is-landscape {
+  --a4-page-w: 297mm;
+  --a4-page-h: 210mm;
+  --a4-page-pad-x: 16mm;
+  --a4-page-pad-y: 12mm;
+
+  --a4-header-mb: 12px;
+  --a4-footer-mt: 12px;
+}
+
+/* ============================================================
+   A4 纸张（屏幕预览）
+   - flex 布局让纸张撑满 297mm / 210mm
+   - 页脚自然沉到纸张底部
+   ============================================================ */
+.a4-print-wrapper .a4-page {
+  width: var(--a4-page-w);
+  min-height: var(--a4-page-h);
+  margin: 0 auto;
+  padding: var(--a4-page-pad-y) var(--a4-page-pad-x);
+  background: #fff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  font-size: 12pt;
+  line-height: 1.7;
+
+  display: flex;
+  flex-direction: column;
+
+  transition: width 0.2s, min-height 0.2s, padding 0.2s;
+}
+
+/* ============================================================
+   打印布局表格
+   - 用 table + thead / tfoot 实现页眉页脚跨页重复
+   - 屏幕预览时 flex: 1 撑满纸张，页脚沉底
+   ============================================================ */
+.a4-print-wrapper .a4-print-table {
+  width: 100%;
+  border-collapse: collapse;
+  flex: 1 0 auto;
+}
+
+.a4-print-wrapper .a4-print-table>thead>tr>td,
+.a4-print-wrapper .a4-print-table>tbody>tr>td,
+.a4-print-wrapper .a4-print-table>tfoot>tr>td {
+  padding: 0;
+  border: 0;
+  text-align: left;
+  vertical-align: top;
+}
+
+/* 页脚单元格底对齐，让插槽内容沉到 tfoot 底部 */
+.a4-print-wrapper .a4-print-table>tfoot>tr>td {
+  vertical-align: bottom;
+  padding-top: var(--a4-footer-mt);
+}
+
+/* ============================================================
+   页眉 / 页脚容器
+   ============================================================ */
+.a4-print-wrapper .a4-page-header {
+  padding-bottom: 10px;
+  margin-bottom: var(--a4-header-mb);
+  border-bottom: 2px solid var(--a4-brand);
+}
+
+.a4-print-wrapper .a4-page-footer {
+  padding-top: 10px;
+  margin-top: 0;
+  border-top: 1px solid var(--a4-line);
+  font-size: 9.5pt;
+  color: var(--a4-ink-2);
+}
+
+/* ============================================================
+   打印 Portal 容器
+   - 屏幕上隐藏，仅在打印时通过 body.a4-printing 显示
+   ============================================================ */
+.a4-print-portal-wrapper {
+  display: none;
+}
+
+/* ============================================================
+   打印样式
+   ============================================================ */
+@page {
+  size: A4 portrait;
+  margin: 14mm 16mm;
+}
+
+@media print {
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  /* 隐藏除打印 portal 外的所有 body 直接子元素 */
+  body.a4-printing> :not(.a4-print-portal-wrapper) {
+    display: none !important;
+  }
+
+  body.a4-printing>.a4-print-portal-wrapper {
+    display: block !important;
+  }
+
+  /* 工具栏不打印 */
+  .a4-print-wrapper .no-print,
+  .a4-print-wrapper .a4-toolbar {
+    display: none !important;
+  }
+
+  /* portal 里的 wrapper 重置屏幕装饰 */
+  .a4-print-portal-wrapper .a4-print-wrapper,
+  .a4-print-wrapper {
+    min-height: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    overflow: visible !important;
+  }
+
+  /* 纸张回到文档流，尺寸交给 @page 控制 */
+  .a4-print-portal-wrapper .a4-page,
+  .a4-print-wrapper .a4-page {
+    display: block !important;
+    width: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .a4-print-wrapper .a4-print-table {
+    display: table !important;
+    width: 100% !important;
+    flex: none !important;
+    /* 具体 height 由 useA4Print 动态注入 */
+  }
+
+  /* ★ thead / tfoot 跨页重复 ★ */
+  .a4-print-wrapper .a4-print-table>thead {
+    display: table-header-group !important;
+  }
+
+  .a4-print-wrapper .a4-print-table>tfoot {
+    display: table-footer-group !important;
+    vertical-align: bottom !important;
+  }
+
+  .a4-print-wrapper .a4-print-table>tbody {
+    display: table-row-group !important;
+  }
+
+  /* 分页优化 */
+  .a4-print-wrapper tr,
+  .a4-print-wrapper img,
+  .a4-print-wrapper .avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .a4-print-wrapper h1,
+  .a4-print-wrapper h2,
+  .a4-print-wrapper h3,
+  .a4-print-wrapper .section-title {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  /* 保留背景色 / 边框色 */
+  .a4-print-wrapper,
+  .a4-print-wrapper * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+/* ============================================================
+   工具栏与按钮（共用样式）
+   - A4PrintDocument / A4PdfDocument 都用这套
+   ============================================================ */
+.a4-doc-container .a4-toolbar {
+  width: 210mm;
+  max-width: 100%;
+  margin: 0 auto 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  transition: width 0.2s;
+}
+
+/* 横向时工具栏跟纸张同宽 */
+.a4-doc-container .a4-toolbar.is-landscape {
+  width: 297mm;
+}
+
+.a4-doc-container .a4-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 13.5px;
+  font-family: inherit;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.a4-doc-container .a4-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 主按钮：实心蓝 */
+.a4-doc-container .a4-btn-primary {
+  background: var(--a4-brand, #2b5cff);
+  border-color: var(--a4-brand, #2b5cff);
+  color: #fff;
+}
+
+.a4-doc-container .a4-btn-primary:not(:disabled):hover {
+  background: #1e47d6;
+  border-color: #1e47d6;
+}
+
+/* 次要按钮：描边 */
+.a4-doc-container .a4-btn-outline {
+  background: #fff;
+  border-color: var(--a4-line, #dee0e3);
+  color: var(--a4-ink, #1f2329);
+}
+
+.a4-doc-container .a4-btn-outline:not(:disabled):hover {
+  border-color: var(--a4-brand, #2b5cff);
+  color: var(--a4-brand, #2b5cff);
+}
