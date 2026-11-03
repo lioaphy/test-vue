@@ -1,4 +1,3 @@
-import { ref, nextTick, onBeforeUnmount } from 'vue'
 import { getA4Metrics, MM_TO_PX } from './useA4Metrics'
 
 /**
@@ -8,17 +7,18 @@ import { getA4Metrics, MM_TO_PX } from './useA4Metrics'
  * - 临时修改 document.title 以控制默认文件名
  * - 打印结束自动清理
  */
-export function useA4Print({
+export function createA4Print({
   getPageEl,
   getOrientation,
   getFileName,
   isDisabled,
+  isPrinting,
+  setPrinting,
+  nextTick,
   onBeforePrint,
   onAfterPrint,
-  // onError
+  onError
 }) {
-  const printing = ref(false)
-
   let portalEl = null
   let pageStyleEl = null
   let fallbackTimer = null
@@ -91,15 +91,15 @@ export function useA4Print({
 
   function handleAfterPrint() {
     cleanup()
-    printing.value = false
+    setPrinting(false)
     onAfterPrint?.()
   }
 
   /* ---------------- 主流程 ---------------- */
   async function handlePrint() {
-    if (printing.value || isDisabled()) return
+    if (isPrinting() || isDisabled()) return
 
-    printing.value = true
+    setPrinting(true)
     onBeforePrint?.()
 
     /* 修改 document.title，控制“另存为 PDF”默认文件名 */
@@ -113,8 +113,9 @@ export function useA4Print({
 
     const source = getPageEl()
     if (!source) {
-      printing.value = false
+      setPrinting(false)
       document.title = originalTitle
+      originalTitle = ''
       return
     }
 
@@ -144,15 +145,19 @@ export function useA4Print({
     document.body.classList.add('a4-printing')
     applyPageStyle()
 
-    window.addEventListener('afterprint', handleAfterPrint)
-    window.print()
+    try {
+      window.addEventListener('afterprint', handleAfterPrint)
+      window.print()
 
-    fallbackTimer = setTimeout(() => {
-      if (printing.value) handleAfterPrint()
-    }, 6000)
+      fallbackTimer = setTimeout(() => {
+        if (isPrinting()) handleAfterPrint()
+      }, 6000)
+    } catch (err) {
+      cleanup()
+      setPrinting(false)
+      onError?.(err)
+    }
   }
 
-  onBeforeUnmount(cleanup)
-
-  return { printing, handlePrint }
+  return { handlePrint, cleanup }
 }

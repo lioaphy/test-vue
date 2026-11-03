@@ -35,58 +35,61 @@
   </div>
 </template>
 
-<script setup>
-import { ref, defineEmits, defineProps, defineExpose } from 'vue'
+<script>
 import A4Paper from './A4Paper.vue'
-import { useA4Pdf } from './composables/useA4Pdf'
+import { createA4Pdf } from './composables/useA4Pdf'
 
-/* ---------------- props ---------------- */
-const props = defineProps({
-  /** 下载按钮文字 */
-  downloadText: { type: String, default: '下载 PDF' },
-  /** 预览按钮文字 */
-  previewText: { type: String, default: '新标签页预览' },
-  /** 生成中文字 */
-  generatingText: { type: String, default: '生成中…' },
-  /** 下载时的文件名（不含 .pdf） */
-  fileName: { type: String, default: 'document' },
-  /** 是否禁用 */
-  disabled: { type: Boolean, default: false },
-  /** PDF 导出时是否让表格表头按页重复 */
-  repeatTableHeader: { type: Boolean, default: true },
-  /** 重复表头与正文之间的间距（mm） */
-  theadGapMm: { type: Number, default: 1 },
-  /** 纸张方向 */
-  orientation: {
-    type: String,
-    default: 'portrait',
-    validator: (v) => ['portrait', 'landscape'].includes(v)
+export default {
+  name: 'A4PdfDocument',
+  components: { A4Paper },
+  props: {
+    downloadText: { type: String, default: '下载 PDF' },
+    previewText: { type: String, default: '新标签页预览' },
+    generatingText: { type: String, default: '生成中…' },
+    fileName: { type: String, default: 'document' },
+    disabled: { type: Boolean, default: false },
+    repeatTableHeader: { type: Boolean, default: true },
+    theadGapMm: { type: Number, default: 1 },
+    orientation: {
+      type: String,
+      default: 'portrait',
+      validator: value => ['portrait', 'landscape'].includes(value)
+    }
+  },
+  data() {
+    return {
+      generating: false,
+      pdfController: null
+    }
+  },
+  created() {
+    this.pdfController = createA4Pdf({
+      getPageEl: () => this.$refs.paperRef && this.$refs.paperRef.getPageEl(),
+      getOrientation: () => this.orientation,
+      getFileName: () => this.fileName,
+      isDisabled: () => this.disabled,
+      isGenerating: () => this.generating,
+      setGenerating: value => { this.generating = value },
+      repeatTableHeader: () => this.repeatTableHeader,
+      theadGapMm: () => this.theadGapMm,
+      onBeforePrint: () => this.$emit('before-print'),
+      onAfterPrint: () => this.$emit('after-print'),
+      onError: error => this.$emit('error', error)
+    })
+  },
+  methods: {
+    handleDownload() {
+      return this.pdfController.handleDownload()
+    },
+    handlePreview() {
+      return this.pdfController.handlePreview()
+    },
+    downloadPdf() {
+      return this.handleDownload()
+    },
+    previewPdf() {
+      return this.handlePreview()
+    }
   }
-})
-
-/* ---------------- emits ---------------- */
-const emit = defineEmits(['before-print', 'after-print', 'error'])
-
-/* ---------------- A4Paper 引用 ---------------- */
-const paperRef = ref(null)
-
-/* ---------------- PDF 逻辑 ---------------- */
-const { generating, handleDownload, handlePreview } = useA4Pdf({
-  getPageEl: () => paperRef.value?.pageRef,
-  getOrientation: () => props.orientation,
-  getFileName: () => props.fileName,
-  isDisabled: () => props.disabled,
-  repeatTableHeader: () => props.repeatTableHeader,
-  theadGapMm: () => props.theadGapMm,
-  onBeforePrint: () => emit('before-print'),
-  onAfterPrint: () => emit('after-print'),
-  onError: (err) => emit('error', err)
-})
-
-/* ---------------- 暴露实例方法给父组件 ---------------- */
-defineExpose({
-  downloadPdf: handleDownload,
-  previewPdf: handlePreview,
-  paperRef
-})
+}
 </script>

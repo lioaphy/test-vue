@@ -1,4 +1,3 @@
-import { ref } from 'vue'
 import html2canvas from 'html2canvas'
 import { jsPDF } from 'jspdf'
 import { getA4Metrics } from './useA4Metrics'
@@ -10,19 +9,19 @@ import { getA4Metrics } from './useA4Metrics'
  * - 表格表头跨页重复
  * - 切片对齐到表格行边界，避免半截行
  */
-export function useA4Pdf({
+export function createA4Pdf({
   getPageEl,
   getOrientation,
   getFileName,
   isDisabled,
+  isGenerating,
+  setGenerating,
   repeatTableHeader = () => true,
   theadGapMm = () => 1,
   onBeforePrint,
   onAfterPrint,
   onError
 }) {
-  const generating = ref(false)
-
   /* ---------------- 表格测量 ---------------- */
   function measureTables(bodyEl, scale) {
     if (!bodyEl) return []
@@ -247,8 +246,8 @@ export function useA4Pdf({
 
   /* ---------------- 下载 ---------------- */
   async function handleDownload() {
-    if (generating.value || isDisabled()) return
-    generating.value = true
+    if (isGenerating() || isDisabled()) return
+    setGenerating(true)
     onBeforePrint?.()
 
     try {
@@ -266,13 +265,13 @@ export function useA4Pdf({
       console.error('[useA4Pdf] 生成 PDF 失败：', err)
       onError?.(err)
     } finally {
-      generating.value = false
+      setGenerating(false)
     }
   }
 
   /* ---------------- 新标签页预览 ---------------- */
   async function handlePreview() {
-    if (generating.value || isDisabled()) return
+    if (isGenerating() || isDisabled()) return
 
     const win = window.open('', '_blank')
     if (!win) {
@@ -291,7 +290,7 @@ export function useA4Pdf({
       <body><p>正在生成 PDF，请稍候…</p></body></html>
     `)
 
-    generating.value = true
+    setGenerating(true)
     onBeforePrint?.()
 
     try {
@@ -305,9 +304,9 @@ export function useA4Pdf({
       try { win.close() } catch (_) { /* ignore */ }
       onError?.(err)
     } finally {
-      generating.value = false
+      setGenerating(false)
     }
   }
 
-  return { generating, handleDownload, handlePreview, generatePdfBlob }
+  return { handleDownload, handlePreview, generatePdfBlob }
 }

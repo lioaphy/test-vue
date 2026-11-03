@@ -9,8 +9,7 @@
       <button class="primary-btn" @click="openDialog">打开发货单预览</button>
     </div>
 
-    <Teleport to="body">
-      <div v-if="dialogVisible" class="my-dialog-mask" @click.self="closeDialog">
+    <div v-if="dialogVisible" class="my-dialog-mask" @click.self="closeDialog">
         <div class="my-dialog">
           <header class="my-dialog-header">
             <h3>发货单预览</h3>
@@ -126,43 +125,44 @@
           </div>
         </div>
       </div>
-    </Teleport>
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
+<script>
 import A4PrintDocument from './components/a4/A4PrintDocument.vue'
 import A4PdfDocument from './components/a4/A4PdfDocument.vue'
 import PackingInfo from './components/PackingInfo.vue'
 import PackingTable from './components/PackingTable.vue'
 
-/* ---------------- Dialog 控制 ---------------- */
-const dialogVisible = ref(false)
-const mode = ref('print')         // 'print' | 'pdf'
-const orientation = ref('landscape')  // 10 列内容，默认横向更合适
-
-function openDialog() { dialogVisible.value = true }
-function closeDialog() { dialogVisible.value = false }
-
-/* ---------------- 基础信息 ---------------- */
-const today = new Date().toLocaleDateString('zh-CN', {
-  year: 'numeric', month: '2-digit', day: '2-digit'
-})
-
-const orderInfo = {
-  zcpackno: 'ZCPK20260113',
-  bstkd: 'PO-2026-0088',
-  customer: '深圳某某电子有限公司',
-  contact: '李经理',
-  phone: '138 0000 0000',
-  shipDate: '2026-01-15',
-  warehouse: '杭州一号仓',
-  totalQty: 0
-}
-
-/* ---------------- 装箱明细 ---------------- */
-const details = ref([
+export default {
+  name: 'HomeView',
+  components: {
+    A4PrintDocument,
+    A4PdfDocument,
+    PackingInfo,
+    PackingTable
+  },
+  data() {
+    return {
+      dialogVisible: false,
+      mode: 'print',
+      orientation: 'landscape',
+      today: new Date().toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }),
+      orderInfo: {
+        zcpackno: 'ZCPK20260113',
+        bstkd: 'PO-2026-0088',
+        customer: '深圳某某电子有限公司',
+        contact: '李经理',
+        phone: '138 0000 0000',
+        shipDate: '2026-01-15',
+        warehouse: '杭州一号仓',
+        totalQty: 0
+      },
+      details: [
   {
     id: 1,
     zcpackno: 'ZCPK20260113',
@@ -307,14 +307,27 @@ const details = ref([
     quantity: 3,
     zwaferid: '第六箱'
   }
-])
-
-/* ---------------- 打印事件 ---------------- */
-function onBeforePrint() { console.log('开始导出…') }
-function onAfterPrint() { console.log('导出完成') }
-function onError(err) {
-  console.error('导出失败', err)
-  alert('导出失败：' + (err?.message || '未知错误'))
+      ]
+    }
+  },
+  methods: {
+    openDialog() {
+      this.dialogVisible = true
+    },
+    closeDialog() {
+      this.dialogVisible = false
+    },
+    onBeforePrint() {
+      console.log('开始导出…')
+    },
+    onAfterPrint() {
+      console.log('导出完成')
+    },
+    onError(err) {
+      console.error('导出失败', err)
+      alert('导出失败：' + (err && err.message ? err.message : '未知错误'))
+    }
+  }
 }
 </script>
 

@@ -1,23 +1,25 @@
-<script setup>
-import { ref, defineProps, defineExpose } from 'vue'
-import './a4-styles.css'   // ★ 引入全局样式
+<script>
+import './a4-styles.css'
 
-defineProps({
-  orientation: {
-    type: String,
-    default: 'portrait',
-    validator: (v) => ['portrait', 'landscape'].includes(v)
+export default {
+  name: 'A4Paper',
+  props: {
+    orientation: {
+      type: String,
+      default: 'portrait',
+      validator: value => ['portrait', 'landscape'].includes(value)
+    }
+  },
+  methods: {
+    getPageEl() {
+      return this.$refs.pageRef
+    }
   }
-})
-
-const wrapperRef = ref(null)
-const pageRef = ref(null)
-
-defineExpose({ wrapperRef, pageRef })
+}
 </script>
 
 <template>
-  <div ref="wrapperRef" class="a4-print-wrapper" :class="`is-${orientation}`">
+  <div ref="wrapperRef" class="a4-print-wrapper" :class="'is-' + orientation">
     <div ref="pageRef" class="a4-page">
       <table class="a4-print-table">
         <thead v-if="$slots.header">

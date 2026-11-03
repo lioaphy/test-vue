@@ -31,11 +31,13 @@
   </div>
 </template>
 
-<script setup>
-import { defineProps } from 'vue'
-defineProps({
-  info: { type: Object, required: true }
-})
+<script>
+export default {
+  name: 'PackingInfo',
+  props: {
+    info: { type: Object, required: true }
+  }
+}
 </script>
 
 <style>

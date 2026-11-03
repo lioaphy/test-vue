@@ -38,19 +38,21 @@
   </table>
 </template>
 
-<script setup>
-import { computed, defineProps } from 'vue'
-
-const props = defineProps({
-  list: { type: Array, default: () => [] }
-})
-
-const totalLfimg = computed(() =>
-  props.list.reduce((sum, d) => sum + (Number(d.lfimg) || 0), 0)
-)
-const totalQuantity = computed(() =>
-  props.list.reduce((sum, d) => sum + (Number(d.quantity) || 0), 0)
-)
+<script>
+export default {
+  name: 'PackingTable',
+  props: {
+    list: { type: Array, default: () => [] }
+  },
+  computed: {
+    totalLfimg() {
+      return this.list.reduce((sum, item) => sum + (Number(item.lfimg) || 0), 0)
+    },
+    totalQuantity() {
+      return this.list.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
+    }
+  }
+}
 </script>
 
 <style>
